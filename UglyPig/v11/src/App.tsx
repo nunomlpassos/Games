@@ -302,18 +302,16 @@ export default function App() {
 
   const toggleDirection = useCallback(() => {
     const state = gameStateRef.current;
-    if (!hasStarted || isPaused || countdown !== null || isLandscape) return;
+    if (!hasStarted || isPaused || countdown !== null || isLandscape || showExitConfirm) return;
 
     if (state.showOnboarding) state.showOnboarding = false;
 
-    if (state.isGameOver) {
-      startCountdown("restart");
-      return;
-    }
+    // Restart from game-over must only happen via the Game Over button.
+    if (state.isGameOver) return;
 
     state.pigDirection *= -1;
     playTone(620, 0.05, "triangle");
-  }, [playTone, hasStarted, isPaused, countdown, isLandscape, startCountdown]);
+  }, [playTone, hasStarted, isPaused, countdown, isLandscape, showExitConfirm]);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -494,7 +492,14 @@ export default function App() {
       <div
         className="relative border-4 border-amber-900 overflow-hidden w-screen h-screen"
         style={{ transform: `translateX(${renderState.shakeX}px)`, touchAction: "manipulation" }}
-        onPointerDown={handlePointerDown}
+        onPointerDown={(e) => {
+          if (showExitConfirm) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          handlePointerDown(e);
+        }}
       >
         <FarmBackground gameWidth={gameSize.width} gameHeight={gameSize.height} />
 
@@ -591,15 +596,38 @@ export default function App() {
         )}
 
         {showExitConfirm && (
-          <div className="absolute inset-0 z-[70] bg-black/70 flex items-center justify-center">
-            <div className="bg-white p-6 rounded-xl w-72 border-4 border-amber-700 text-center">
+          <div
+            className="absolute inset-0 z-[70] bg-black/70 flex items-center justify-center"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <div
+              className="bg-white p-6 rounded-xl w-72 border-4 border-amber-700 text-center"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
               <div className="text-xl font-black text-amber-800 mb-4">Exit game?</div>
               <div className="grid grid-cols-2 gap-3">
-                <button className="bg-gray-200 font-bold py-2 rounded" onClick={handleExitNo}>
+                <button
+                  className="bg-gray-200 font-bold py-2 rounded"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onClick={handleExitNo}
+                >
                   No
                 </button>
                 <button
                   className="bg-red-600 text-white font-bold py-2 rounded"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                   onClick={() => {
                     CapacitorApp.exitApp();
                   }}
