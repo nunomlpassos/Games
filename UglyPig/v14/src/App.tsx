@@ -14,6 +14,8 @@ const FIRST_FENCE_DELAY = 550;
 const PIG_SIZE = 42;
 const FENCE_HEIGHT = 24;
 const CRASH_DURATION_MS = 900;
+const OPENING_FENCE_Y_RATIO = 0.18; // first fence starts already visible
+const FRAME_MS = 1000 / 60;
 
 interface FenceData {
   id: number;
@@ -213,6 +215,30 @@ export default function App() {
     setTimeout(() => playTone(340, 0.11, "triangle"), 70);
   }, [playTone]);
 
+  const seedOpeningFence = useCallback(() => {
+    const state = gameStateRef.current;
+    const opening = generateFence(gameSize.width);
+    const openingY = Math.floor(gameSize.height * OPENING_FENCE_Y_RATIO);
+
+    state.fences = [
+      {
+        id: state.fenceId++,
+        y: openingY,
+        gapStart: opening.gapStart,
+        gapWidth: opening.gapWidth,
+        passed: false,
+      },
+    ];
+
+    // Keep spacing rhythm equal to previous versions:
+    // first fence starts already advanced, so delay next spawn accordingly.
+    const advancedPx = openingY + FENCE_HEIGHT;
+    const extraDelayMs = (advancedPx / FENCE_SPEED) * FRAME_MS;
+    state.lastSpawnTime = performance.now() + extraDelayMs;
+
+    state.hasSpawnedFirstFence = true;
+  }, [gameSize.width, gameSize.height]);
+
   const resetRun = useCallback(() => {
     const state = gameStateRef.current;
     state.lastScore = state.score;
@@ -232,7 +258,9 @@ export default function App() {
     state.showGameOverMenu = false;
     state.isNewBest = false;
     state.gameOverReadyAt = 0;
-  }, [gameSize.width]);
+
+    seedOpeningFence();
+  }, [gameSize.width, seedOpeningFence]);
 
   useEffect(() => {
     try {
@@ -570,6 +598,10 @@ export default function App() {
               className="px-6 py-3 rounded-xl bg-amber-500 text-black font-black text-xl shadow-lg"
               onClick={(e) => {
                 e.stopPropagation();
+                const state = gameStateRef.current;
+                if (!state.hasSpawnedFirstFence && state.fences.length === 0) {
+                  seedOpeningFence();
+                }
                 setHasStarted(true);
                 startCountdown("resume");
               }}
