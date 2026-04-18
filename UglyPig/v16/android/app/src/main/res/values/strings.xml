@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ugly Pig</string>
+    <string name="title_activity_main">Ugly Pig</string>
+    <string name="package_name">com.nuno.uglypig.v6</string>
+    <string name="custom_url_scheme">com.nuno.uglypig.v6</string>
+</resources>
